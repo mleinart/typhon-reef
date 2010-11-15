@@ -69,19 +69,19 @@ int threeVal = 0;           // current value for channel 3
 int fourVal = 0;            // current value for channel 4
 
 // Variables making use of EEPROM memory:
-/*
-EEPROMVar<int> oneStartMins = 60;      // minute to start this channel.
-EEPROMVar<int> onePhotoPeriod = 510;   // photoperiod in minutes for this channel.
+
+EEPROMVar<int> oneStartMins = 750;      // minute to start this channel.
+EEPROMVar<int> onePhotoPeriod = 720;   // photoperiod in minutes for this channel.
 EEPROMVar<int> oneMax = 100;           // max intensity for this channel, as a percentage
 EEPROMVar<int> oneFadeDuration = 60;   // duration of the fade on and off for sunrise and sunset for
                                        //    this channel.
-EEPROMVar<int> twoStartMins = 480;
-EEPROMVar<int> twoPhotoPeriod = 510;
+EEPROMVar<int> twoStartMins = 810;
+EEPROMVar<int> twoPhotoPeriod = 600;
 EEPROMVar<int> twoMax = 100;
 EEPROMVar<int> twoFadeDuration = 60;
 
-EEPROMVar<int> threeStartMins = 480;
-EEPROMVar<int> threePhotoPeriod = 510;
+EEPROMVar<int> threeStartMins = 810;
+EEPROMVar<int> threePhotoPeriod = 600;
 EEPROMVar<int> threeMax = 100;
 EEPROMVar<int> threeFadeDuration = 60;
                             
@@ -89,10 +89,9 @@ EEPROMVar<int> fourStartMins = 480;
 EEPROMVar<int> fourPhotoPeriod = 510;  
 EEPROMVar<int> fourMax = 100;          
 EEPROMVar<int> fourFadeDuration = 60;  
-*/
 
+/*
 int oneStartMins = 750;      // minute to start this channel.
-//int onePhotoPeriod = 920;
 int onePhotoPeriod = 720;   // photoperiod in minutes for this channel.
 int oneMax = 100;           // max intensity for this channel, as a percentage
 int oneFadeDuration = 60;   // duration of the fade on and off for sunrise and sunset for
@@ -111,7 +110,6 @@ int fourStartMins = 480;
 int fourPhotoPeriod = 510;  
 int fourMax = 0;          
 int fourFadeDuration = 60;  
-/*
 
 int oneStartMins = 1320;      // minute to start this channel.
 int onePhotoPeriod = 240;   // photoperiod in minutes for this channel.
@@ -194,12 +192,7 @@ int   setLed(int mins,    // current time in minutes
             int ledMax   // max value for this channel
             )  {
   int val = 0;
-  
-    
-    
-// Post-shutoff turns right back on @ 100%.
-
-    
+      
       //fade up
       if (mins > start || mins <= start + fade)  {
         val = map(mins - start, 0, fade, 0, ledMax);
@@ -342,8 +335,6 @@ void loop() {
     }
     lcd.setCursor(0,0);
     printHMS(hour, minute, second);
-    //lcd.print(" ");
-    //lcd.print(minCounter);
     
     lcd.setCursor(0,1);
     lcd.print(oneVal);
@@ -424,7 +415,6 @@ void loop() {
     }
   }
 
-///////////////////////////////////////////////////////////////////// WORK ON FADE DURATION & over Midnight!
   if(menuCount == 5){
     //set fade duration for channel one
     lcd.setCursor(0,0);
