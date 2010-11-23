@@ -1,12 +1,11 @@
 /*
 // Typhon firmware
-// v0.2 alpha 2010-14-09
+// v0.2 alpha 2010-23-11
 // N. Enders, R. Ensminger
 //
 // This sketch provides firmware for the Typhon LED controller.
 // It provides a structure to fade 4 independent channels of LED lighting
 // on and off each day, to simulate sunrise and sunset.
-// Modified November 9, 2010 R.Ensminger to add Manual Override on/off.
 //
 // Current work in progress:
 // - store all LED variables in EEPROM so they are not reset by a loss of power
@@ -91,33 +90,27 @@ EEPROMVar<int> fourMax = 100;
 EEPROMVar<int> fourFadeDuration = 60;  
 
 /*
-int oneStartMins = 750;      // minute to start this channel.
-int onePhotoPeriod = 720;   // photoperiod in minutes for this channel.
+int oneStartMins = 1380;      // minute to start this channel.
+int onePhotoPeriod = 120;   // photoperiod in minutes for this channel.
 int oneMax = 100;           // max intensity for this channel, as a percentage
 int oneFadeDuration = 60;   // duration of the fade on and off for sunrise and sunset for
                                        //    this channel.                                    
-int twoStartMins = 810;
-int twoPhotoPeriod = 600;
+int twoStartMins = 800;
+int twoPhotoPeriod = 60;
 int twoMax = 100;
-int twoFadeDuration = 60;
+int twoFadeDuration = 15;
 
-int threeStartMins = 810;
-int threePhotoPeriod = 600;
+int threeStartMins = 800;
+int threePhotoPeriod = 60;
 int threeMax = 100;
-int threeFadeDuration = 60;
+int threeFadeDuration = 30;
                             
-int fourStartMins = 480;
-int fourPhotoPeriod = 510;  
-int fourMax = 0;          
+int fourStartMins = 800;
+int fourPhotoPeriod = 120;  
+int fourMax = 100;          
 int fourFadeDuration = 60;  
-
-int oneStartMins = 1320;      // minute to start this channel.
-int onePhotoPeriod = 240;   // photoperiod in minutes for this channel.
-int oneMax = 100;           // max intensity for this channel, as a percentage
-int oneFadeDuration = 119;   // duration of the fade on and off for sunrise and sunset for
-                                       //    this channel.
-
 */
+
 /****** RTC Functions ******/
 /***************************/
 
@@ -180,9 +173,6 @@ void getDate(byte *second,
 /***************************/
 //function to set LED brightness according to time of day
 //function has three equal phases - ramp up, hold, and ramp down
-
-////$$$$$$$$$$$$$
-//needs some modification to keep it from shutting off right at midnight, consider using something other than current time in minutes.
 
 int   setLed(int mins,    // current time in minutes
             int ledPin,  // pin for this channel of LEDs
@@ -282,7 +272,6 @@ void setup() {
   lcd.print("");
   delay(5000);
   lcd.clear();
-  //setDate(1, 20, 20, 2, 8, 11, 10);
   analogWrite(bkl,bklIdle);
 }
 
@@ -296,7 +285,22 @@ void loop() {
   oldMinCounter = minCounter;
   minCounter = hour * 60 + minute;
   
-
+  //check & set fade durations
+  if(oneFadeDuration > onePhotoPeriod/2 && onePhotoPeriod >0){oneFadeDuration = onePhotoPeriod/2;}
+  if(oneFadeDuration<1){oneFadeDuration=1;}
+  
+  if(twoFadeDuration > twoPhotoPeriod/2 && twoPhotoPeriod >0){twoFadeDuration = twoPhotoPeriod/2;} 
+  if(twoFadeDuration<1){twoFadeDuration=1;}
+  
+  if(threeFadeDuration > threePhotoPeriod/2 && threePhotoPeriod >0){threeFadeDuration = threePhotoPeriod/2;}
+  if(threeFadeDuration<1){threeFadeDuration=1;}
+  
+  if(fourFadeDuration > fourPhotoPeriod/2 && fourPhotoPeriod > 0){fourFadeDuration = fourPhotoPeriod/2;}
+  if(fourFadeDuration<1){fourFadeDuration=1;}
+  
+  //check & set any time functions
+  
+  
   //set outputs
   if(!override){
   oneVal = setLed(minCounter, oneLed, oneStartMins, onePhotoPeriod, oneFadeDuration, oneMax);
@@ -335,7 +339,6 @@ void loop() {
     }
     lcd.setCursor(0,0);
     printHMS(hour, minute, second);
-    
     lcd.setCursor(0,1);
     lcd.print(oneVal);
     lcd.setCursor(4,1);
@@ -344,6 +347,8 @@ void loop() {
     lcd.print(threeVal);
     lcd.setCursor(12,1);
     lcd.print(fourVal);
+    //debugging function to use the select button to advance the timer by 1 minute
+    //if(select.uniquePress()){setDate(second, minute+1, hour, dayOfWeek, dayOfMonth, month, year);}
   }
   
   if(menuCount == 2){
@@ -389,12 +394,17 @@ void loop() {
     lcd.print("Channel 1 Start");
     lcd.setCursor(0,1);
     printMins(oneStartMins, true);
+    
     if(plus.uniquePress() && oneStartMins < 1440){
-      oneStartMins++;
+        oneStartMins++;
+        if(onePhotoPeriod >0){onePhotoPeriod--;}
+        else{onePhotoPeriod=1439;}
       bklTime = millis();
     }
     if(minus.uniquePress() && oneStartMins > 0){
-      oneStartMins--;
+        oneStartMins--;
+        if(onePhotoPeriod<1439){onePhotoPeriod++;}
+        else{onePhotoPeriod=0;}
       bklTime = millis();
     }
   }
@@ -405,12 +415,20 @@ void loop() {
     lcd.print("Channel 1 End");
     lcd.setCursor(0,1);
     printMins(oneStartMins+onePhotoPeriod, true);
-    if(plus.uniquePress() && onePhotoPeriod < 1440){
-      onePhotoPeriod++;
+    if(plus.uniquePress()){
+      if(onePhotoPeriod < 1439){
+      onePhotoPeriod++;}
+      else{
+        onePhotoPeriod=0;
+      }
       bklTime = millis();
     }
-    if(minus.uniquePress() && onePhotoPeriod > 0){
-      onePhotoPeriod--;
+    if(minus.uniquePress()){
+      if(onePhotoPeriod >0){
+        onePhotoPeriod--;}
+      else{
+        onePhotoPeriod=1439;
+      }
       bklTime = millis();
     }
   }
@@ -421,11 +439,11 @@ void loop() {
     lcd.print("Channel 1 Fade");
     lcd.setCursor(0,1);
     printMins(oneFadeDuration, false);
-    if(plus.uniquePress() && oneFadeDuration > oneFadeDuration/2){
+    if(plus.uniquePress() && (oneFadeDuration < onePhotoPeriod/2 || oneFadeDuration == 0)){
       oneFadeDuration++;
       bklTime = millis();
     }
-    if(minus.uniquePress()){
+    if(minus.uniquePress() && oneFadeDuration > 1){
       oneFadeDuration--;
       bklTime = millis();
     }
@@ -456,11 +474,15 @@ void loop() {
     lcd.setCursor(0,1);
     printMins(twoStartMins, true);
     if(plus.uniquePress() && twoStartMins < 1440){
-      twoStartMins++;
+        twoStartMins++;
+        if(twoPhotoPeriod >0){twoPhotoPeriod--;}
+        else{twoPhotoPeriod=1439;}
       bklTime = millis();
     }
     if(minus.uniquePress() && twoStartMins > 0){
-      twoStartMins--;
+        twoStartMins--;
+        if(twoPhotoPeriod<1439){twoPhotoPeriod++;}
+        else{twoPhotoPeriod=0;}
       bklTime = millis();
     }
   }
@@ -471,12 +493,20 @@ void loop() {
     lcd.print("Channel 2 End");
     lcd.setCursor(0,1);
     printMins(twoStartMins+twoPhotoPeriod, true);
-    if(plus.uniquePress() && twoPhotoPeriod < 1440){
-      twoPhotoPeriod++;
+    if(plus.uniquePress()){
+      if(twoPhotoPeriod < 1439){
+      twoPhotoPeriod++;}
+      else{
+        twoPhotoPeriod=0;
+      }
       bklTime = millis();
     }
-    if(minus.uniquePress() && twoPhotoPeriod > 0){
-      twoPhotoPeriod--;
+    if(minus.uniquePress()){
+      if(twoPhotoPeriod >0){
+        twoPhotoPeriod--;}
+      else{
+        twoPhotoPeriod=1439;
+      }
       bklTime = millis();
     }
   }
@@ -487,11 +517,11 @@ void loop() {
     lcd.print("Channel 2 Fade");
     lcd.setCursor(0,1);
     printMins(twoFadeDuration, false);
-    if(plus.uniquePress() && twoFadeDuration > twoPhotoPeriod/2){
+    if(plus.uniquePress() && (twoFadeDuration < twoPhotoPeriod/2 || twoFadeDuration == 0)){
       twoFadeDuration++;
       bklTime = millis();
     }
-    if(minus.uniquePress() && twoFadeDuration > 0){
+    if(minus.uniquePress() && twoFadeDuration > 1){
       twoFadeDuration--;
       bklTime = millis();
     }
@@ -522,11 +552,15 @@ void loop() {
     lcd.setCursor(0,1);
     printMins(threeStartMins, true);
     if(plus.uniquePress() && threeStartMins < 1440){
-      threeStartMins++;
+        threeStartMins++;
+        if(threePhotoPeriod >0){threePhotoPeriod--;}
+        else{threePhotoPeriod=1439;}
       bklTime = millis();
     }
     if(minus.uniquePress() && threeStartMins > 0){
-      threeStartMins--;
+        threeStartMins--;
+        if(threePhotoPeriod<1439){threePhotoPeriod++;}
+        else{threePhotoPeriod=0;}
       bklTime = millis();
     }
   }
@@ -537,12 +571,20 @@ void loop() {
     lcd.print("Channel 3 End");
     lcd.setCursor(0,1);
     printMins(threeStartMins+threePhotoPeriod, true);
-    if(plus.uniquePress() && threePhotoPeriod < 1440){
-      threePhotoPeriod++;
+    if(plus.uniquePress()){
+      if(threePhotoPeriod < 1439){
+      threePhotoPeriod++;}
+      else{
+        threePhotoPeriod=0;
+      }
       bklTime = millis();
     }
-    if(minus.uniquePress() && threePhotoPeriod > 0){
-      threePhotoPeriod--;
+    if(minus.uniquePress()){
+      if(threePhotoPeriod >0){
+        threePhotoPeriod--;}
+      else{
+        threePhotoPeriod=1439;
+      }
       bklTime = millis();
     }
   }
@@ -553,11 +595,11 @@ void loop() {
     lcd.print("Channel 3 Fade");
     lcd.setCursor(0,1);
     printMins(threeFadeDuration, false);
-    if(plus.uniquePress() && threeFadeDuration > threePhotoPeriod/2){
+    if(plus.uniquePress() && (threeFadeDuration < threePhotoPeriod/2 || oneFadeDuration == 0)){
       threeFadeDuration++;
       bklTime = millis();
     }
-    if(minus.uniquePress() && threeFadeDuration > 0){
+    if(minus.uniquePress() && threeFadeDuration > 1){
       threeFadeDuration--;
       bklTime = millis();
     }
@@ -588,11 +630,15 @@ void loop() {
     lcd.setCursor(0,1);
     printMins(fourStartMins, true);
     if(plus.uniquePress() && fourStartMins < 1440){
-      fourStartMins++;
+        fourStartMins++;
+        if(fourPhotoPeriod >0){fourPhotoPeriod--;}
+        else{fourPhotoPeriod=1439;}
       bklTime = millis();
     }
     if(minus.uniquePress() && fourStartMins > 0){
-      fourStartMins--;
+        fourStartMins--;
+        if(fourPhotoPeriod<1439){fourPhotoPeriod++;}
+        else{fourPhotoPeriod=0;}
       bklTime = millis();
     }
   }
@@ -603,12 +649,20 @@ void loop() {
     lcd.print("Channel 4 End");
     lcd.setCursor(0,1);
     printMins(fourStartMins+fourPhotoPeriod, true);
-    if(plus.uniquePress() && fourPhotoPeriod < 1440){
-      fourPhotoPeriod++;
+    if(plus.uniquePress()){
+      if(fourPhotoPeriod < 1439){
+      fourPhotoPeriod++;}
+      else{
+        fourPhotoPeriod=0;
+      }
       bklTime = millis();
     }
-    if(minus.uniquePress() && fourPhotoPeriod > 0){
-      fourPhotoPeriod--;
+    if(minus.uniquePress()){
+      if(fourPhotoPeriod >0){
+        fourPhotoPeriod--;}
+      else{
+        fourPhotoPeriod=1439;
+      }
       bklTime = millis();
     }
   }
@@ -619,11 +673,11 @@ void loop() {
     lcd.print("Channel 4 Fade");
     lcd.setCursor(0,1);
     printMins(fourFadeDuration, false);
-    if(plus.uniquePress() && fourFadeDuration > fourPhotoPeriod/2){
+    if(plus.uniquePress() && (fourFadeDuration < fourPhotoPeriod/2 || oneFadeDuration == 0)){
       fourFadeDuration++;
       bklTime = millis();
     }
-    if(minus.uniquePress() && fourFadeDuration > 0){
+    if(minus.uniquePress() && fourFadeDuration > 1){
       fourFadeDuration--;
       bklTime = millis();
     }
