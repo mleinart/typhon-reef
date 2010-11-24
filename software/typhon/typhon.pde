@@ -660,7 +660,7 @@ void loop() {
     lcd.print("Channel 3 Fade");
     lcd.setCursor(0,1);
     printMins(threeFadeDuration, false);
-    if(plus.isPressed() && (threeFadeDuration < threePhotoPeriod/2 || oneFadeDuration == 0)){
+    if(plus.isPressed() && (threeFadeDuration < threePhotoPeriod/2 || threeFadeDuration == 0)){
       threeFadeDuration++;
       delay(btnCurrDelay(btnCurrIteration-1));
       bklTime = millis();
@@ -745,7 +745,7 @@ void loop() {
     lcd.print("Channel 4 Fade");
     lcd.setCursor(0,1);
     printMins(fourFadeDuration, false);
-    if(plus.isPressed() && (fourFadeDuration < fourPhotoPeriod/2 || oneFadeDuration == 0)){
+    if(plus.isPressed() && (fourFadeDuration < fourPhotoPeriod/2 || fourFadeDuration == 0)){
       fourFadeDuration++;
       delay(btnCurrDelay(btnCurrIteration-1));
       bklTime = millis();
