@@ -1,6 +1,6 @@
 /*
 // Typhon firmware
-// v0.2 alpha 2010-23-11
+// v0.3 alpha 2011-16-11
 // N. Enders, R. Ensminger
 //
 // This sketch provides firmware for the Typhon LED controller.
@@ -9,12 +9,14 @@
 //
 // Current work in progress:
 // - store all LED variables in EEPROM so they are not reset by a loss of power
+// - allow for signals to be inverted for buckpucks or other drivers that consider 0 to be "on"
 //
 // Future developments may include:
 // - moon phase simulation
 // - storm simulation
+// - support for plugin hardware modules for temperature, pH, relay control, etc.
 // 
-// Sketch developed in Arduino-18
+// Sketch developed in Arduino-22
 // Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
 // Button is available here: http://www.arduino.cc/playground/Code/Button
 // EEPROMVar is available here: http://www.arduino.cc/playground/uploads/Profiles/EEPROMVar_01.zip
@@ -96,6 +98,15 @@ EEPROMVar<int> fourStartMins = 480;
 EEPROMVar<int> fourPhotoPeriod = 510;  
 EEPROMVar<int> fourMax = 100;          
 EEPROMVar<int> fourFadeDuration = 60;  
+
+// variables to invert the output PWM signal,
+// for use with drivers that consider 0 to be "on"
+// i.e. buckpucks. If you need to provide an inverted 
+// signal on any channel, set the appropriate variable to true.
+boolean oneInverted = false;
+boolean twoInverted = false;
+boolean threeInverted = false;
+boolean fourInverted = false;
 
 /*
 int oneStartMins = 1380;      // minute to start this channel.
@@ -182,12 +193,13 @@ void getDate(byte *second,
 //function to set LED brightness according to time of day
 //function has three equal phases - ramp up, hold, and ramp down
 
-int   setLed(int mins,    // current time in minutes
-            int ledPin,  // pin for this channel of LEDs
-            int start,   // start time for this channel of LEDs
-            int period,  // photoperiod for this channel of LEDs
-            int fade,    // fade duration for this channel of LEDs
-            int ledMax   // max value for this channel
+int   setLed(int mins,         // current time in minutes
+            int ledPin,        // pin for this channel of LEDs
+            int start,         // start time for this channel of LEDs
+            int period,        // photoperiod for this channel of LEDs
+            int fade,          // fade duration for this channel of LEDs
+            int ledMax,        // max value for this channel
+            boolean inverted   // true if the channel is inverted
             )  {
   int val = 0;
       
@@ -213,7 +225,8 @@ int   setLed(int mins,    // current time in minutes
     if (val > ledMax)  {val = ledMax;} 
     if (val < 0) {val = 0; } 
     
-  analogWrite(ledPin, map(val, 0, 100, 0, 255));
+  if (inverted) {analogWrite(ledPin, map(val, 0, 100, 255, 0));}
+  else {analogWrite(ledPin, map(val, 0, 100, 0, 255));}
   if(override){val=overpercent;}
   return val;
 }
@@ -342,10 +355,10 @@ void loop() {
   
   //set outputs
   if(!override){
-  oneVal = setLed(minCounter, oneLed, oneStartMins, onePhotoPeriod, oneFadeDuration, oneMax);
-  twoVal = setLed(minCounter, twoLed, twoStartMins, twoPhotoPeriod, twoFadeDuration, twoMax);
-  threeVal = setLed(minCounter, threeLed, threeStartMins, threePhotoPeriod, threeFadeDuration, threeMax);
-  fourVal = setLed(minCounter, fourLed, fourStartMins, fourPhotoPeriod, fourFadeDuration, fourMax);
+  oneVal = setLed(minCounter, oneLed, oneStartMins, onePhotoPeriod, oneFadeDuration, oneMax, oneInverted);
+  twoVal = setLed(minCounter, twoLed, twoStartMins, twoPhotoPeriod, twoFadeDuration, twoMax, twoInverted);
+  threeVal = setLed(minCounter, threeLed, threeStartMins, threePhotoPeriod, threeFadeDuration, threeMax, threeInverted);
+  fourVal = setLed(minCounter, fourLed, fourStartMins, fourPhotoPeriod, fourFadeDuration, fourMax, fourInverted);
   }
   else{
     ovrSetAll(overpercent);
