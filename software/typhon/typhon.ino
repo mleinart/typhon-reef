@@ -1,25 +1,8 @@
 /*
-// Typhon firmware
-// v0.3 alpha 2011-16-11
-// N. Enders, R. Ensminger
-//
-// This sketch provides firmware for the Typhon LED controller.
-// It provides a structure to fade 4 independent channels of LED lighting
-// on and off each day, to simulate sunrise and sunset.
-//
-// Current work in progress:
-// - store all LED variables in EEPROM so they are not reset by a loss of power
-// - allow for signals to be inverted for buckpucks or other drivers that consider 0 to be "on"
-//
-// Future developments may include:
-// - moon phase simulation
-// - storm simulation
-// - support for plugin hardware modules for temperature, pH, relay control, etc.
-// 
-// Sketch developed in Arduino-22
-// Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
-// Button is available here: http://www.arduino.cc/playground/Code/Button
-// EEPROMVar is available here: http://www.arduino.cc/playground/uploads/Profiles/EEPROMVar_01.zip
+Typhon firmware
+N. Enders, R. Ensminger
+
+Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
 */
 
 // include the libraries:
