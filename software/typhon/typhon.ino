@@ -9,7 +9,6 @@ Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
 #include <LiquidCrystal.h>
 #include <Wire.h>
 #include <Button.h>
-#include <EEPROM.h>
 #include <EEPROMVar.h>
 
 
@@ -138,14 +137,14 @@ void setDate(byte second,        // 0-59
              byte year)          // 0-99
 {
    Wire.beginTransmission(DS1307_I2C_ADDRESS);
-   Wire.send(0);
-   Wire.send(decToBcd(second));
-   Wire.send(decToBcd(minute));
-   Wire.send(decToBcd(hour));
-   Wire.send(decToBcd(dayOfWeek));
-   Wire.send(decToBcd(dayOfMonth));
-   Wire.send(decToBcd(month));
-   Wire.send(decToBcd(year));
+   Wire.write(0);
+   Wire.write(decToBcd(second));
+   Wire.write(decToBcd(minute));
+   Wire.write(decToBcd(hour));
+   Wire.write(decToBcd(dayOfWeek));
+   Wire.write(decToBcd(dayOfMonth));
+   Wire.write(decToBcd(month));
+   Wire.write(decToBcd(year));
    Wire.endTransmission();
 }
 
@@ -159,16 +158,16 @@ void getDate(byte *second,
              byte *year)
 {
   Wire.beginTransmission(DS1307_I2C_ADDRESS);
-  Wire.send(0);
+  Wire.write(0);
   Wire.endTransmission();
   Wire.requestFrom(DS1307_I2C_ADDRESS, 7);
-  *second     = bcdToDec(Wire.receive() & 0x7f);
-  *minute     = bcdToDec(Wire.receive());
-  *hour       = bcdToDec(Wire.receive() & 0x3f);
-  *dayOfWeek  = bcdToDec(Wire.receive());
-  *dayOfMonth = bcdToDec(Wire.receive());
-  *month      = bcdToDec(Wire.receive());
-  *year       = bcdToDec(Wire.receive());
+  *second     = bcdToDec(Wire.read() & 0x7f);
+  *minute     = bcdToDec(Wire.read());
+  *hour       = bcdToDec(Wire.read() & 0x3f);
+  *dayOfWeek  = bcdToDec(Wire.read());
+  *dayOfMonth = bcdToDec(Wire.read());
+  *month      = bcdToDec(Wire.read());
+  *year       = bcdToDec(Wire.read());
 }
 
 /****** LED Functions ******/
@@ -810,4 +809,3 @@ void loop() {
   setDate(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
   }
 }
-
