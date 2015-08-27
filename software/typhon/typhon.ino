@@ -44,7 +44,7 @@ int menuSelect = 0;
 
 //create the plus and minus navigation delay counter with its initial maximum of 250.
 byte btnMaxDelay = 200;
-byte btnMinDelay = 25;
+
 byte btnMaxIteration = 5;
 byte btnCurrIteration;
 
@@ -74,7 +74,7 @@ int fourVal = 0;            // current value for channel 4
 
 // Variables making use of EEPROM memory:
 
-EEPROMVar<int> oneStartMins = 750;      // minute to start this channel.
+EEPROMVar<int> oneStartMins = 750;     // minute to start this channel.
 EEPROMVar<int> onePhotoPeriod = 720;   // photoperiod in minutes for this channel.
 EEPROMVar<int> oneMax = 100;           // max intensity for this channel, as a percentage
 EEPROMVar<int> oneFadeDuration = 60;   // duration of the fade on and off for sunrise and sunset for
@@ -88,15 +88,15 @@ EEPROMVar<int> threeStartMins = 810;
 EEPROMVar<int> threePhotoPeriod = 600;
 EEPROMVar<int> threeMax = 100;
 EEPROMVar<int> threeFadeDuration = 60;
-                            
+
 EEPROMVar<int> fourStartMins = 480;
-EEPROMVar<int> fourPhotoPeriod = 510;  
-EEPROMVar<int> fourMax = 100;          
-EEPROMVar<int> fourFadeDuration = 60;  
+EEPROMVar<int> fourPhotoPeriod = 510;
+EEPROMVar<int> fourMax = 100;
+EEPROMVar<int> fourFadeDuration = 60;
 
 // variables to invert the output PWM signal,
 // for use with drivers that consider 0 to be "on"
-// i.e. buckpucks. If you need to provide an inverted 
+// i.e. buckpucks. If you need to provide an inverted
 // signal on any channel, set the appropriate variable to true.
 boolean oneInverted = false;
 boolean twoInverted = false;
@@ -108,7 +108,7 @@ int oneStartMins = 1380;      // minute to start this channel.
 int onePhotoPeriod = 120;   // photoperiod in minutes for this channel.
 int oneMax = 100;           // max intensity for this channel, as a percentage
 int oneFadeDuration = 60;   // duration of the fade on and off for sunrise and sunset for
-                                       //    this channel.                                    
+                            //    this channel.
 int twoStartMins = 800;
 int twoPhotoPeriod = 60;
 int twoMax = 100;
@@ -118,11 +118,11 @@ int threeStartMins = 800;
 int threePhotoPeriod = 60;
 int threeMax = 100;
 int threeFadeDuration = 30;
-                            
+
 int fourStartMins = 800;
-int fourPhotoPeriod = 120;  
-int fourMax = 100;          
-int fourFadeDuration = 60;  
+int fourPhotoPeriod = 120;
+int fourMax = 100;
+int fourFadeDuration = 60;
 */
 
 /****** RTC Functions ******/
@@ -197,7 +197,7 @@ int   setLed(int mins,         // current time in minutes
             boolean inverted   // true if the channel is inverted
             )  {
   int val = 0;
-      
+
       //fade up
       if (mins > start || mins <= start + fade)  {
         val = map(mins - start, 0, fade, 0, ledMax);
@@ -212,14 +212,14 @@ int   setLed(int mins,         // current time in minutes
           {
             val=map((start+period-mins)%1440,0,fade,0,ledMax);
           }
-        else  
-        val = 0; 
+        else
+        val = 0;
       }
-    
-    
-    if (val > ledMax)  {val = ledMax;} 
-    if (val < 0) {val = 0; } 
-    
+
+
+    if (val > ledMax)  {val = ledMax;}
+    if (val < 0) {val = 0; }
+
   if (inverted) {analogWrite(ledPin, map(val, 0, 100, 255, 0));}
   else {analogWrite(ledPin, map(val, 0, 100, 0, 255));}
   if(override){val=overpercent;}
@@ -262,16 +262,16 @@ void printMins(int mins,       //time in minutes to print
     if(mn<10){
       lcd.print("0");
     }
-    lcd.print(mn); 
+    lcd.print(mn);
 }
 
 // format hours, mins, secs into a readable time (24 hr format)
 void printHMS (byte hr,
                byte mn,
                byte sec      //time to print
-              )  
+              )
 {
-  
+
     if(hr<10){
       lcd.print(" ");
     }
@@ -320,34 +320,34 @@ void loop() {
   getDate(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);
   oldMinCounter = minCounter;
   minCounter = hour * 60 + minute;
-  
+
   //reset plus & minus acceleration counters if the button's state has changed
   if(plus.stateChanged())
   {
    btnCurrDelay(btnMaxIteration);
   }
   if(minus.stateChanged())
-  {  
+  {
     btnCurrDelay(btnMaxIteration);
   }
-       
-  
+
+
   //check & set fade durations
   if(oneFadeDuration > onePhotoPeriod/2 && onePhotoPeriod >0){oneFadeDuration = onePhotoPeriod/2;}
   if(oneFadeDuration<1){oneFadeDuration=1;}
-  
-  if(twoFadeDuration > twoPhotoPeriod/2 && twoPhotoPeriod >0){twoFadeDuration = twoPhotoPeriod/2;} 
+
+  if(twoFadeDuration > twoPhotoPeriod/2 && twoPhotoPeriod >0){twoFadeDuration = twoPhotoPeriod/2;}
   if(twoFadeDuration<1){twoFadeDuration=1;}
-  
+
   if(threeFadeDuration > threePhotoPeriod/2 && threePhotoPeriod >0){threeFadeDuration = threePhotoPeriod/2;}
   if(threeFadeDuration<1){threeFadeDuration=1;}
-  
+
   if(fourFadeDuration > fourPhotoPeriod/2 && fourPhotoPeriod > 0){fourFadeDuration = fourPhotoPeriod/2;}
   if(fourFadeDuration<1){fourFadeDuration=1;}
-  
+
   //check & set any time functions
-  
-  
+
+
   //set outputs
   if(!override){
   oneVal = setLed(minCounter, oneLed, oneStartMins, onePhotoPeriod, oneFadeDuration, oneMax, oneInverted);
@@ -358,8 +358,8 @@ void loop() {
   else{
     ovrSetAll(overpercent);
   }
-  
-  
+
+
   //turn the backlight off and reset the menu if the idle time has elapsed
   if(backlightIdleMs + BACKLIGHT_IDLE_MS < millis() && backlightIdleMs > 0 ){
     analogWrite(LCD_BACKLIGHT, BACKLIGHT_DIM);
@@ -397,7 +397,7 @@ void loop() {
     //debugging function to use the select button to advance the timer by 1 minute
     //if(select.uniquePress()){setDate(second, minute+1, hour, dayOfWeek, dayOfMonth, month, year);}
   }
-  
+
   if(menuCount == 2){
     //Manual Override Menu
     lcd.setCursor(0,0);
@@ -409,7 +409,7 @@ void loop() {
       else{menuSelect = 0;}
       backlightIdleMs = millis();
     }
-    
+
     if(menuSelect == 0){
       lcd.print("Timer");
       override = false;}
@@ -420,7 +420,7 @@ void loop() {
     if(menuSelect == 2){
       lcd.print("OFF  ");
       overpercent = 0;
-      override = true;}    
+      override = true;}
     if(menuSelect == 3){
       override = true;
       lcd.print(overpercent,DEC);
@@ -431,7 +431,7 @@ void loop() {
           delay(btnCurrDelay(btnCurrIteration-1));
           backlightIdleMs = millis();
         }
-        
+
         if(minus.isPressed() && overpercent > 0)
         {
           overpercent--;
@@ -440,7 +440,7 @@ void loop() {
         }
       }
 }
-  
+
 
 
   if(menuCount == 3){
@@ -449,7 +449,7 @@ void loop() {
     lcd.print("Channel 1 Start");
     lcd.setCursor(0,1);
     printMins(oneStartMins, true);
-    
+
     if(plus.isPressed() && oneStartMins < 1440){
         oneStartMins++;
         if(onePhotoPeriod >0){onePhotoPeriod--;}
@@ -802,7 +802,7 @@ void loop() {
     }
   setDate(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
   }
-  
+
   if(menuCount == 20){
     //set minutes
     lcd.setCursor(0,0);
