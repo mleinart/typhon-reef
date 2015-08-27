@@ -18,7 +18,7 @@ Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
 // set the RTC's I2C address
 #define DS1307_I2C_ADDRESS 0x68
 // create the LCD
-LiquidCrystal lcd(8, 7, 5, 4, 16, 2);
+LiquidCrystal lcd(8, 7, 9, 4, 16, 2);
 // set up backlight
 int bkl         = 6;        // backlight pin
 byte bklIdle    = 10;       // PWM value for backlight at idle
