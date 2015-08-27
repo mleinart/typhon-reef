@@ -12,19 +12,32 @@ Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
 #include <EEPROMVar.h>
 
 
-/**** Define Variables & Constants ****/
-/**************************************/
-
+/*** DEFINES ***/
 // set the RTC's I2C address
 #define DS1307_I2C_ADDRESS 0x68
-// create the LCD
-LiquidCrystal lcd(8, 7, 9, 4, 16, 2);
-// set up backlight
-int bkl         = 6;        // backlight pin
-byte bklIdle    = 10;       // PWM value for backlight at idle
-byte bklOn      = 70;       // PWM value for backlight when on
-int bklDelay    = 10000;    // ms for the backlight to idle before turning off
-unsigned long bklTime = 0;  // counter since backlight turned on
+
+// LCD config
+#define LCD_RS 8        // RS pin
+#define LCD_ENABLE 7    // enable pin
+#define LCD_DATA4 9     // d4 pin
+#define LCD_DATA5 4     // d5 pin
+#define LCD_DATA6 16    // d6 pin
+#define LCD_DATA7 2     // d7 pin
+#define LCD_BACKLIGHT 6 // backlight pin
+
+// Backlight config
+#define BACKLIGHT_DIM 10              // PWM value for backlight at idle
+#define BACKLIGHT_ON 70               // PWM value for backlight when on
+#define BACKLIGHT_IDLE_MS 10000 // Backlight idle delay
+
+/**** Define Variables & Constants ****/
+/**************************************/
+// Create the LCD
+LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_DATA4, LCD_DATA5, LCD_DATA6, LCD_DATA7);
+
+// Set up backlight
+unsigned long backlightIdleMs = 0;  // counter since backlight turned on
+
 // create the menu counter
 int menuCount   = 1;
 int menuSelect = 0;
@@ -286,15 +299,15 @@ void ovrSetAll(int pct){
 
 void setup() {
   Wire.begin();
-  pinMode(bkl, OUTPUT);
+  pinMode(LCD_BACKLIGHT, OUTPUT);
   lcd.begin(16, 2);
-  digitalWrite(bkl, HIGH);
+  digitalWrite(LCD_BACKLIGHT, HIGH);
   lcd.print("Typhon-Reef");
   lcd.setCursor(0,1);
   lcd.print("");
   delay(5000);
   lcd.clear();
-  analogWrite(bkl,bklIdle);
+  analogWrite(LCD_BACKLIGHT, BACKLIGHT_DIM);
   btnCurrIteration = btnMaxIteration;
 }
 
@@ -348,17 +361,17 @@ void loop() {
   
   
   //turn the backlight off and reset the menu if the idle time has elapsed
-  if(bklTime + bklDelay < millis() && bklTime > 0 ){
-    analogWrite(bkl,bklIdle);
+  if(backlightIdleMs + BACKLIGHT_IDLE_MS < millis() && backlightIdleMs > 0 ){
+    analogWrite(LCD_BACKLIGHT, BACKLIGHT_DIM);
     menuCount = 1;
     lcd.clear();
-    bklTime = 0;
+    backlightIdleMs = 0;
   }
 
   //iterate through the menus
   if(menu.uniquePress()){
-    analogWrite(bkl,bklOn);
-    bklTime = millis();
+    analogWrite(LCD_BACKLIGHT, BACKLIGHT_ON);
+    backlightIdleMs = millis();
     if(menuCount < 20){
       menuCount++;
     }else {
@@ -394,7 +407,7 @@ void loop() {
     if(select.uniquePress()){
       if(menuSelect < 3){menuSelect++;}
       else{menuSelect = 0;}
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     
     if(menuSelect == 0){
@@ -416,14 +429,14 @@ void loop() {
         {
           overpercent++;
           delay(btnCurrDelay(btnCurrIteration-1));
-          bklTime = millis();
+          backlightIdleMs = millis();
         }
         
         if(minus.isPressed() && overpercent > 0)
         {
           overpercent--;
           delay(btnCurrDelay(btnCurrIteration-1));
-          bklTime = millis();
+          backlightIdleMs = millis();
         }
       }
 }
@@ -442,14 +455,14 @@ void loop() {
         if(onePhotoPeriod >0){onePhotoPeriod--;}
         else{onePhotoPeriod=1439;}
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && oneStartMins > 0){
         oneStartMins--;
         if(onePhotoPeriod<1439){onePhotoPeriod++;}
         else{onePhotoPeriod=0;}
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -466,7 +479,7 @@ void loop() {
         onePhotoPeriod=0;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed()){
       if(onePhotoPeriod >0){
@@ -475,7 +488,7 @@ void loop() {
         onePhotoPeriod=1439;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -488,12 +501,12 @@ void loop() {
     if(plus.isPressed() && (oneFadeDuration < onePhotoPeriod/2 || oneFadeDuration == 0)){
       oneFadeDuration++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && oneFadeDuration > 1){
       oneFadeDuration--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -507,12 +520,12 @@ void loop() {
     if(plus.isPressed() && oneMax < 100){
       oneMax++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && oneMax > 0){
       oneMax--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -527,14 +540,14 @@ void loop() {
         if(twoPhotoPeriod >0){twoPhotoPeriod--;}
         else{twoPhotoPeriod=1439;}
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && twoStartMins > 0){
         twoStartMins--;
         if(twoPhotoPeriod<1439){twoPhotoPeriod++;}
         else{twoPhotoPeriod=0;}
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -551,7 +564,7 @@ void loop() {
         twoPhotoPeriod=0;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed()){
       if(twoPhotoPeriod >0){
@@ -560,7 +573,7 @@ void loop() {
         twoPhotoPeriod=1439;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -573,12 +586,12 @@ void loop() {
     if(plus.isPressed() && (twoFadeDuration < twoPhotoPeriod/2 || twoFadeDuration == 0)){
       twoFadeDuration++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && twoFadeDuration > 1){
       twoFadeDuration--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -592,12 +605,12 @@ void loop() {
     if(plus.isPressed() && twoMax < 100){
       twoMax++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && twoMax > 0){
       twoMax--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -612,14 +625,14 @@ void loop() {
         if(threePhotoPeriod >0){threePhotoPeriod--;}
         else{threePhotoPeriod=1439;}
         delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && threeStartMins > 0){
         threeStartMins--;
         if(threePhotoPeriod<1439){threePhotoPeriod++;}
         else{threePhotoPeriod=0;}
         delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -636,7 +649,7 @@ void loop() {
         threePhotoPeriod=0;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed()){
       if(threePhotoPeriod >0){
@@ -645,7 +658,7 @@ void loop() {
         threePhotoPeriod=1439;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -658,12 +671,12 @@ void loop() {
     if(plus.isPressed() && (threeFadeDuration < threePhotoPeriod/2 || threeFadeDuration == 0)){
       threeFadeDuration++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && threeFadeDuration > 1){
       threeFadeDuration--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -677,12 +690,12 @@ void loop() {
     if(plus.isPressed() && threeMax < 100){
       threeMax++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && threeMax > 0){
       threeMax--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -697,14 +710,14 @@ void loop() {
         if(fourPhotoPeriod >0){fourPhotoPeriod--;}
         else{fourPhotoPeriod=1439;}
         delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && fourStartMins > 0){
         fourStartMins--;
         if(fourPhotoPeriod<1439){fourPhotoPeriod++;}
         else{fourPhotoPeriod=0;}
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -721,7 +734,7 @@ void loop() {
         fourPhotoPeriod=0;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed()){
       if(fourPhotoPeriod >0){
@@ -730,7 +743,7 @@ void loop() {
         fourPhotoPeriod=1439;
       }
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -743,12 +756,12 @@ void loop() {
     if(plus.isPressed() && (fourFadeDuration < fourPhotoPeriod/2 || fourFadeDuration == 0)){
       fourFadeDuration++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && fourFadeDuration > 1){
       fourFadeDuration--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -762,12 +775,12 @@ void loop() {
     if(plus.isPressed() && fourMax < 100){
       fourMax++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && fourMax > 0){
       fourMax--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   }
 
@@ -780,12 +793,12 @@ void loop() {
     if(plus.isPressed() && hour < 23){
       hour++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && hour > 0){
       hour--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   setDate(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
   }
@@ -799,12 +812,12 @@ void loop() {
     if(plus.isPressed() && minute < 59){
       minute++;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
     if(minus.isPressed() && minute > 0){
       minute--;
       delay(btnCurrDelay(btnCurrIteration-1));
-      bklTime = millis();
+      backlightIdleMs = millis();
     }
   setDate(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
   }
