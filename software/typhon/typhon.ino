@@ -2,7 +2,13 @@
 Typhon firmware
 N. Enders, R. Ensminger
 
-Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
+Dependencies:
+ LiquidCrystal
+ Wire
+ EEPROMVar
+ Button
+ Time
+ DS1307RTC
 */
 
 // include the libraries:
@@ -10,12 +16,11 @@ Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
 #include <Wire.h>
 #include <Button.h>
 #include <EEPROMVar.h>
+#include <Time.h>
+#include <DS1307RTC.h>
 
 
 /*** DEFINES ***/
-// set the RTC's I2C address
-#define DS1307_I2C_ADDRESS 0x68
-
 // LCD config
 #define LCD_RS 8        // RS pin
 #define LCD_ENABLE 7    // enable pin
@@ -43,6 +48,7 @@ int menuCount   = 1;
 int menuSelect = 0;
 
 //create the plus and minus navigation delay counter with its initial maximum of 250.
+byte btnMinDelay = 25;
 byte btnMaxDelay = 200;
 
 byte btnMaxIteration = 5;
@@ -124,64 +130,6 @@ int fourPhotoPeriod = 120;
 int fourMax = 100;
 int fourFadeDuration = 60;
 */
-
-/****** RTC Functions ******/
-/***************************/
-
-// Convert decimal numbers to binary coded decimal
-byte decToBcd(byte val)
-{
-  return ( (val/10*16) + (val%10) );
-}
-
-// Convert binary coded decimal to decimal numbers
-byte bcdToDec(byte val)
-{
-  return ( (val/16*10) + (val%16) );
-}
-
-// Sets date and time, starts the clock
-void setDate(byte second,        // 0-59
-             byte minute,        // 0-59
-             byte hour,          // 1-23
-             byte dayOfWeek,     // 1-7
-             byte dayOfMonth,    // 1-31
-             byte month,         // 1-12
-             byte year)          // 0-99
-{
-   Wire.beginTransmission(DS1307_I2C_ADDRESS);
-   Wire.write(0);
-   Wire.write(decToBcd(second));
-   Wire.write(decToBcd(minute));
-   Wire.write(decToBcd(hour));
-   Wire.write(decToBcd(dayOfWeek));
-   Wire.write(decToBcd(dayOfMonth));
-   Wire.write(decToBcd(month));
-   Wire.write(decToBcd(year));
-   Wire.endTransmission();
-}
-
-// Gets the date and time
-void getDate(byte *second,
-             byte *minute,
-             byte *hour,
-             byte *dayOfWeek,
-             byte *dayOfMonth,
-             byte *month,
-             byte *year)
-{
-  Wire.beginTransmission(DS1307_I2C_ADDRESS);
-  Wire.write(0);
-  Wire.endTransmission();
-  Wire.requestFrom(DS1307_I2C_ADDRESS, 7);
-  *second     = bcdToDec(Wire.read() & 0x7f);
-  *minute     = bcdToDec(Wire.read());
-  *hour       = bcdToDec(Wire.read() & 0x3f);
-  *dayOfWeek  = bcdToDec(Wire.read());
-  *dayOfMonth = bcdToDec(Wire.read());
-  *month      = bcdToDec(Wire.read());
-  *year       = bcdToDec(Wire.read());
-}
 
 /****** LED Functions ******/
 /***************************/
@@ -298,6 +246,9 @@ void ovrSetAll(int pct){
 /***************/
 
 void setup() {
+  // Initialize clock
+  setSyncProvider(RTC.get);
+  // XXX Error to check battery if RTC isnt initialized
   Wire.begin();
   pinMode(LCD_BACKLIGHT, OUTPUT);
   lcd.begin(16, 2);
@@ -315,11 +266,8 @@ void setup() {
 /****************/
 
 void loop() {
-  byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
-
-  getDate(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);
   oldMinCounter = minCounter;
-  minCounter = hour * 60 + minute;
+  minCounter = hour() * 60 + minute();
 
   //reset plus & minus acceleration counters if the button's state has changed
   if(plus.stateChanged())
@@ -385,7 +333,7 @@ void loop() {
       lcd.clear();
     }
     lcd.setCursor(0,0);
-    printHMS(hour, minute, second);
+    printHMS(hour(), minute(), second());
     lcd.setCursor(0,1);
     lcd.print(oneVal);
     lcd.setCursor(4,1);
@@ -394,8 +342,6 @@ void loop() {
     lcd.print(threeVal);
     lcd.setCursor(12,1);
     lcd.print(fourVal);
-    //debugging function to use the select button to advance the timer by 1 minute
-    //if(select.uniquePress()){setDate(second, minute+1, hour, dayOfWeek, dayOfMonth, month, year);}
   }
 
   if(menuCount == 2){
@@ -789,18 +735,17 @@ void loop() {
     lcd.setCursor(0,0);
     lcd.print("Set Time: Hrs");
     lcd.setCursor(0,1);
-    printHMS(hour, minute, second);
-    if(plus.isPressed() && hour < 23){
-      hour++;
+    printHMS(hour(), minute(), second());
+    if(plus.isPressed()){
+      adjustTime(SECS_PER_HOUR);
       delay(btnCurrDelay(btnCurrIteration-1));
       backlightIdleMs = millis();
     }
-    if(minus.isPressed() && hour > 0){
-      hour--;
+    if(minus.isPressed()){
+      adjustTime(-SECS_PER_HOUR);
       delay(btnCurrDelay(btnCurrIteration-1));
       backlightIdleMs = millis();
     }
-  setDate(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
   }
 
   if(menuCount == 20){
@@ -808,17 +753,16 @@ void loop() {
     lcd.setCursor(0,0);
     lcd.print("Set Time: Mins");
     lcd.setCursor(0,1);
-    printHMS(hour, minute, second);
-    if(plus.isPressed() && minute < 59){
-      minute++;
+    printHMS(hour(), minute(), second());
+    if(plus.isPressed()){
+      adjustTime(SECS_PER_MIN);
       delay(btnCurrDelay(btnCurrIteration-1));
       backlightIdleMs = millis();
     }
-    if(minus.isPressed() && minute > 0){
-      minute--;
+    if(minus.isPressed()){
+      adjustTime(-SECS_PER_MIN);
       delay(btnCurrDelay(btnCurrIteration-1));
       backlightIdleMs = millis();
     }
-  setDate(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
   }
 }

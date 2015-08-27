@@ -11,4 +11,4 @@ Assembled Typhon controllers can be purchased from stevesleds.com for about $45 
 
 Requirements
 ------------
-Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, and Button libraries.
+Requires LiquidCrystal, Wire, EEPROM, EEPROMVar, Time, DS1307RTC, and Button libraries.
